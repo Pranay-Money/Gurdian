@@ -1,0 +1,77 @@
+# Fly.io staging deployment configuration for Guardian API
+# Deploy with: fly deploy --config fly.staging.toml
+
+app = "guardian-api-staging"
+primary_region = "iad"
+
+[build]
+  dockerfile = "api/Dockerfile.prod"
+
+[env]
+  APP_ENV = "staging"
+  DEBUG = "false"
+  LOG_LEVEL = "DEBUG"
+  DATABASE_POOL_SIZE = "10"
+  DATABASE_MAX_OVERFLOW = "20"
+  REDIS_CACHE_TTL = "3600"
+  DEVICE_TOKEN_TTL_DAYS = "30"
+  DEVICE_TOKEN_ROTATION_GRACE_SECONDS = "300"
+  RATE_LIMIT_REQUESTS = "100"
+  RATE_LIMIT_WINDOW_SECONDS = "60"
+  ANALYZE_RATE_LIMIT = "30"
+  GSB_TIMEOUT = "5"
+  GSB_RATE_LIMIT = "10000"
+  VT_TIMEOUT = "10"
+  VT_RATE_LIMIT = "500"
+  OP_TIMEOUT = "30"
+  OP_RATE_LIMIT = "10"
+  PT_TIMEOUT = "30"
+  PT_RATE_LIMIT = "10"
+  RDAP_TIMEOUT = "5"
+  RDAP_RATE_LIMIT = "100"
+  DNS_TIMEOUT = "3"
+  DNS_RATE_LIMIT = "200"
+  TLS_TIMEOUT = "5"
+  TLS_RATE_LIMIT = "100"
+  CACHE_TTL_MALICIOUS = "86400"
+  CACHE_TTL_SUSPICIOUS = "21600"
+  CACHE_TTL_CLEAN = "3600"
+  CACHE_TTL_UNKNOWN = "300"
+  RETENTION_DAYS = "7"
+  DEFAULT_STORE_RAW_TEXT = "false"
+  BLOCKLIST_SYNC_INTERVAL_SECONDS = "300"
+  BLOCKLIST_MAX_AGE_DAYS = "30"
+  BLOCKLIST_VERSION_KEY = "blocklist:version"
+  SENTRY_ENVIRONMENT = "staging"
+  SENTRY_TRACES_SAMPLE_RATE = "1.0"
+  SENTRY_PROFILES_SAMPLE_RATE = "1.0"
+  PROMETHEUS_MULTIPROC_DIR = "/tmp/prometheus_multiproc"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0  # Scale to zero when not in use
+  
+  [http_service.checks]
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+    protocol = "http"
+    type = "http"
+
+[vm]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[metrics]
+  port = 9090
+  path = "/metrics"
+
+[mounts]
+  source = "prometheus_multiproc"
+  destination = "/tmp/prometheus_multiproc"

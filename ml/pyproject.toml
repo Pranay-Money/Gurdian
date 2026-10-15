@@ -1,0 +1,66 @@
+[project]
+name = "guardian-ml"
+version = "0.1.0"
+description = "Guardian ML model training and inference"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "scikit-learn>=1.3.0",
+    "lightgbm>=4.2.0",
+    "numpy>=1.26.0",
+    "pandas>=2.1.0",
+    "scipy>=1.11.0",
+    "joblib>=1.3.0",
+    "tldextract>=5.1.0",
+    "python-dateutil>=2.8.2",
+    "structlog>=24.1.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+    "jupyter>=1.0.0",
+]
+data = [
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    "selenium>=4.15.0",
+]
+training = [
+    "matplotlib>=3.8.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["guardian_ml*"]
+
+[project.scripts]
+guardian_ml_train = "guardian_ml.cli.train:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "W", "UP", "B", "C4", "ARG", "PTH", "SIM", "T20"]
+ignore = ["S101", "ARG001", "ARG002"]
+src = ["src"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+disallow_untyped_defs = true
+strict = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--basetemp=.pytest_tmp"

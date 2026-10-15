@@ -1,0 +1,96 @@
+# Fly.io deployment configuration for Guardian API
+# Docs: https://fly.io/docs/
+# 
+# Prerequisites:
+# 1. Install flyctl: https://fly.io/docs/hands-on/install-flyctl/
+# 2. Authenticate: fly auth login
+# 3. Create apps: fly apps create guardian-api (and guardian-api-staging)
+# 4. Create Postgres: fly postgres create --name guardian-db --region <region>
+# 5. Create Redis: fly redis create --name guardian-redis --region <region>
+# 6. Attach Postgres: fly postgres attach guardian-db --app guardian-api
+# 7. Attach Redis: fly redis attach guardian-redis --app guardian-api
+# 8. Set secrets: fly secrets set SECRET_KEY=... GOOGLE_SAFE_BROWSING_API_KEY=... etc.
+# 9. Deploy: fly deploy --config fly.toml
+
+app = "guardian-api"
+primary_region = "iad"  # Change to your preferred region
+
+[build]
+  dockerfile = "api/Dockerfile.prod"
+
+[env]
+  APP_ENV = "production"
+  DEBUG = "false"
+  LOG_LEVEL = "INFO"
+  DATABASE_POOL_SIZE = "20"
+  DATABASE_MAX_OVERFLOW = "40"
+  REDIS_CACHE_TTL = "3600"
+  DEVICE_TOKEN_TTL_DAYS = "365"
+  DEVICE_TOKEN_ROTATION_GRACE_SECONDS = "300"
+  RATE_LIMIT_REQUESTS = "100"
+  RATE_LIMIT_WINDOW_SECONDS = "60"
+  ANALYZE_RATE_LIMIT = "30"
+  GSB_TIMEOUT = "5"
+  GSB_RATE_LIMIT = "10000"
+  VT_TIMEOUT = "10"
+  VT_RATE_LIMIT = "500"
+  OP_TIMEOUT = "30"
+  OP_RATE_LIMIT = "10"
+  PT_TIMEOUT = "30"
+  PT_RATE_LIMIT = "10"
+  RDAP_TIMEOUT = "5"
+  RDAP_RATE_LIMIT = "100"
+  DNS_TIMEOUT = "3"
+  DNS_RATE_LIMIT = "200"
+  TLS_TIMEOUT = "5"
+  TLS_RATE_LIMIT = "100"
+  CACHE_TTL_MALICIOUS = "86400"
+  CACHE_TTL_SUSPICIOUS = "21600"
+  CACHE_TTL_CLEAN = "3600"
+  CACHE_TTL_UNKNOWN = "300"
+  RETENTION_DAYS = "30"
+  DEFAULT_STORE_RAW_TEXT = "false"
+  BLOCKLIST_SYNC_INTERVAL_SECONDS = "300"
+  BLOCKLIST_MAX_AGE_DAYS = "30"
+  BLOCKLIST_VERSION_KEY = "blocklist:version"
+  SENTRY_ENVIRONMENT = "production"
+  SENTRY_TRACES_SAMPLE_RATE = "0.1"
+  SENTRY_PROFILES_SAMPLE_RATE = "0.1"
+  PROMETHEUS_MULTIPROC_DIR = "/tmp/prometheus_multiproc"
+
+# HTTP service configuration
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  
+  # Health checks
+  [http_service.checks]
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+    protocol = "http"
+    type = "http"
+
+# Resource limits
+[vm]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 2
+
+# Scale configuration
+[metrics]
+  port = 9090
+  path = "/metrics"
+
+# Mount for prometheus multiproc
+[mounts]
+  source = "prometheus_multiproc"
+  destination = "/tmp/prometheus_multiproc"
+
+# Staging environment (separate app)
+# Deploy with: fly deploy --config fly.staging.toml

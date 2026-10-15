@@ -1,0 +1,409 @@
+{
+  "fixtures": [
+    {
+      "id": "fixture_001",
+      "channel": "email",
+      "sender": "security@paypal.com",
+      "text": "Dear Customer, your PayPal account has been suspended due to suspicious activity. Please verify your identity immediately by clicking the link below. You have 24 hours before permanent closure.",
+      "urls": ["https://paypal-verify-account.tk/login"],
+      "expected_level": "Critical",
+      "expected_signals": ["deadline_threat", "credential_request", "authority_claim", "call_to_click", "brand_in_subdomain", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_002",
+      "channel": "sms",
+      "sender": "+1-800-555-0199",
+      "text": "URGENT: Your Bank of America account will be closed in 48 hours. Call 1-800-555-0199 now to verify your SSN and PIN.",
+      "urls": [],
+      "expected_level": "High",
+      "expected_signals": ["urgency", "deadline_threat", "credential_request", "authority_claim"]
+    },
+    {
+      "id": "fixture_003",
+      "channel": "email",
+      "sender": "noreply@amazon-security.net",
+      "text": "Hello, we detected unusual login attempts on your Amazon account. Click here to secure your account: http://amazon-security-update.ml/verify",
+      "urls": ["http://amazon-security-update.ml/verify"],
+      "expected_level": "Critical",
+      "expected_signals": ["credential_request", "call_to_click", "brand_in_subdomain", "suspicious_tld", "no_https"]
+    },
+    {
+      "id": "fixture_004",
+      "channel": "social",
+      "sender": "@microsoft_support",
+      "text": "Congratulations! You've won a $500 Microsoft gift card. Claim your prize now: https://bit.ly/msft-gift",
+      "urls": ["https://bit.ly/msft-gift"],
+      "expected_level": "High",
+      "expected_signals": ["prize_lottery", "authority_claim", "call_to_click", "url_shortener"]
+    },
+    {
+      "id": "fixture_005",
+      "channel": "email",
+      "sender": "hr@google-jobs.xyz",
+      "text": "Work from home opportunity! Earn $5000/week with Google. No experience needed. Immediate joining. Reply with your resume and bank details for direct deposit.",
+      "urls": ["https://google-careers.xyz/apply"],
+      "expected_level": "High",
+      "expected_signals": ["job_investment_lure", "credential_request", "unusual_payment", "brand_in_subdomain", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_006",
+      "channel": "sms",
+      "sender": "IRS",
+      "text": "IRS Notice: You owe $2,450 in back taxes. Pay immediately via Google Play cards or face legal action. Call 1-800-555-0123.",
+      "urls": [],
+      "expected_level": "Critical",
+      "expected_signals": ["deadline_threat", "authority_claim", "unusual_payment", "secrecy"]
+    },
+    {
+      "id": "fixture_007",
+      "channel": "email",
+      "sender": "support@apple.com",
+      "text": "Your Apple ID has been locked for security reasons. Please verify your account at https://apple.com/unlock to restore access.",
+      "urls": ["https://apple.com/unlock"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_008",
+      "channel": "email",
+      "sender": "security@facebook-mail.com",
+      "text": "Hi John, we noticed a login from a new device. If this wasn't you, please secure your account: https://facebook.com/security/check",
+      "urls": ["https://facebook.com/security/check"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_009",
+      "channel": "url",
+      "sender": null,
+      "text": "",
+      "urls": ["https://github.com/microsoft/vscode"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_010",
+      "channel": "email",
+      "sender": "noreply@netflix.com",
+      "text": "Your Netflix subscription will renew tomorrow. No action needed. Thank you for being a member!",
+      "urls": ["https://netflix.com/account"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_011",
+      "channel": "email",
+      "sender": "admin@company-internal.com",
+      "text": "Dear Employee, this is your IT department. We need you to update your password immediately. Click: http://company-hr-portal.xyz/reset",
+      "urls": ["http://company-hr-portal.xyz/reset"],
+      "expected_level": "High",
+      "expected_signals": ["urgency", "credential_request", "call_to_click", "suspicious_tld", "no_https", "authority_claim"]
+    },
+    {
+      "id": "fixture_012",
+      "channel": "sms",
+      "sender": "+91-98765-43210",
+      "text": "बधाई हो! आपने ₹10 लाख जीते हैं। अपना पुरस्कार पाने के लिए यहाँ क्लिक करें: http://prize-claim.ml/win",
+      "urls": ["http://prize-claim.ml/win"],
+      "expected_level": "Critical",
+      "expected_signals": ["prize_lottery", "call_to_click", "suspicious_tld", "no_https"]
+    },
+    {
+      "id": "fixture_013",
+      "channel": "email",
+      "sender": "crypto-investment@protonmail.com",
+      "text": "Exclusive Bitcoin investment opportunity! Guaranteed 300% returns in 7 days. Send 0.1 BTC to wallet: 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+      "urls": ["https://crypto-doubler.xyz/invest"],
+      "expected_level": "Critical",
+      "expected_signals": ["job_investment_lure", "unusual_payment", "credential_request", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_014",
+      "channel": "social",
+      "sender": "@amazon_help",
+      "text": "Your package delivery failed. Reschedule here: https://amazon-delivery-update.tk/reschedule",
+      "urls": ["https://amazon-delivery-update.tk/reschedule"],
+      "expected_level": "High",
+      "expected_signals": ["credential_request", "call_to_click", "brand_in_subdomain", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_015",
+      "channel": "email",
+      "sender": "security@chase.com",
+      "text": "We detected unusual activity on your Chase account ending in 4532. Please verify recent transactions: https://chase.com/verify",
+      "urls": ["https://chase.com/verify"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_016",
+      "channel": "email",
+      "sender": "it-support@university.edu",
+      "text": "URGENT: Your university email will be deactivated in 2 hours. Confirm your credentials at http://student-portal.university.edu.phishersite.com/login",
+      "urls": ["http://student-portal.university.edu.phishersite.com/login"],
+      "expected_level": "Critical",
+      "expected_signals": ["urgency", "deadline_threat", "credential_request", "call_to_click", "brand_in_subdomain", "no_https", "subdomain_depth"]
+    },
+    {
+      "id": "fixture_017",
+      "channel": "sms",
+      "sender": "HDFC Bank",
+      "text": "आपका HDFC खाता निलंबित कर दिया गया है। कृपया तुरंत सत्यापित करें: https://hdfc-verify.tk/kyc",
+      "urls": ["https://hdfc-verify.tk/kyc"],
+      "expected_level": "Critical",
+      "expected_signals": ["deadline_threat", "credential_request", "brand_in_subdomain", "suspicious_tld", "authority_claim"]
+    },
+    {
+      "id": "fixture_018",
+      "channel": "email",
+      "sender": "recruiter@linkedin-jobs.xyz",
+      "text": "Amazing job offer! ₹50,000/month work from home. Send your Aadhaar, PAN, and bank details for verification. Start tomorrow!",
+      "urls": ["https://linkedin-careers.xyz/apply"],
+      "expected_level": "High",
+      "expected_signals": ["job_investment_lure", "credential_request", "brand_in_subdomain", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_019",
+      "channel": "email",
+      "sender": "no-reply@paypal.com",
+      "text": "You've received a payment of $150.00 from John Doe. View details: https://paypal.com/activity",
+      "urls": ["https://paypal.com/activity"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_020",
+      "channel": "url",
+      "sender": null,
+      "text": "",
+      "urls": ["http://192.168.1.1/admin/login.php"],
+      "expected_level": "High",
+      "expected_signals": ["ip_host", "no_https", "credential_request"]
+    },
+    {
+      "id": "fixture_021",
+      "channel": "email",
+      "sender": "support@google.com",
+      "text": "Your Google Cloud trial ends in 3 days. Upgrade now to continue: https://cloud.google.com/upgrade",
+      "urls": ["https://cloud.google.com/upgrade"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_022",
+      "channel": "sms",
+      "sender": "Amazon",
+      "text": "Your order #123-4567890 has been shipped. Track: https://amazon.com/track?ref=ship",
+      "urls": ["https://amazon.com/track?ref=ship"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_023",
+      "channel": "email",
+      "sender": "security@microsoft.com",
+      "text": "Unusual sign-in activity detected. Review your recent activity: https://account.microsoft.com/security",
+      "urls": ["https://account.microsoft.com/security"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_024",
+      "channel": "email",
+      "sender": "verify@apple-id-confirmation.ml",
+      "text": "Your Apple ID will be deleted in 24 hours. Confirm your identity: https://apple-id-confirmation.ml/verify",
+      "urls": ["https://apple-id-confirmation.ml/verify"],
+      "expected_level": "Critical",
+      "expected_signals": ["deadline_threat", "credential_request", "brand_in_subdomain", "suspicious_tld", "authority_claim"]
+    },
+    {
+      "id": "fixture_025",
+      "channel": "social",
+      "sender": "@instagram_support",
+      "text": "Your Instagram account has been reported for copyright violation. Appeal here: https://instagram-appeal.cf/form",
+      "urls": ["https://instagram-appeal.cf/form"],
+      "expected_level": "Critical",
+      "expected_signals": ["deadline_threat", "credential_request", "authority_claim", "brand_in_subdomain", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_026",
+      "channel": "email",
+      "sender": "lottery@national-lottery.gov.uk",
+      "text": "CONGRATULATIONS! You won £1,000,000 in the UK National Lottery. Claim your prize by providing bank details and paying £500 processing fee.",
+      "urls": ["https://national-lottery-claim.xyz/claim"],
+      "expected_level": "Critical",
+      "expected_signals": ["prize_lottery", "credential_request", "unusual_payment", "authority_claim", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_027",
+      "channel": "sms",
+      "sender": "UPI",
+      "text": "₹50,000 credited to your account. Verify UPI PIN: https://upi-verify.gq/confirm",
+      "urls": ["https://upi-verify.gq/confirm"],
+      "expected_level": "Critical",
+      "expected_signals": ["credential_request", "authority_claim", "suspicious_tld", "call_to_click"]
+    },
+    {
+      "id": "fixture_028",
+      "channel": "email",
+      "sender": "hr@tcs-careers.xyz",
+      "text": "TCS Job Offer: Software Engineer, ₹15 LPA. Remote work. Immediate joining. Reply with PAN, Aadhaar, and 3 months bank statements.",
+      "urls": ["https://tcs-hiring.xyz/offer"],
+      "expected_level": "High",
+      "expected_signals": ["job_investment_lure", "credential_request", "brand_in_subdomain", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_029",
+      "channel": "email",
+      "sender": "noreply@github.com",
+      "text": "Dependabot alert: High severity vulnerability in your repository. View: https://github.com/user/repo/security/dependabot",
+      "urls": ["https://github.com/user/repo/security/dependabot"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_030",
+      "channel": "url",
+      "sender": null,
+      "text": "",
+      "urls": ["https://xn--pple-43d.com/login"],
+      "expected_level": "High",
+      "expected_signals": ["punycode_idn", "brand_in_subdomain", "credential_request"]
+    },
+    {
+      "id": "fixture_031",
+      "channel": "email",
+      "sender": "support@dropbox.com",
+      "text": "Your Dropbox storage is almost full. Upgrade now: https://dropbox.com/upgrade",
+      "urls": ["https://dropbox.com/upgrade"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_032",
+      "channel": "sms",
+      "sender": "SBI",
+      "text": "आपका SBI ATM कार्ड ब्लॉक हो जाएगा। तुरंत सक्रिय करें: http://sbi-card-activate.ml/activate",
+      "urls": ["http://sbi-card-activate.ml/activate"],
+      "expected_level": "Critical",
+      "expected_signals": ["deadline_threat", "credential_request", "brand_in_subdomain", "suspicious_tld", "no_https", "authority_claim"]
+    },
+    {
+      "id": "fixture_033",
+      "channel": "email",
+      "sender": "compliance@coinbase.com",
+      "text": "Your Coinbase account requires verification. Complete KYC: https://coinbase.com/verify",
+      "urls": ["https://coinbase.com/verify"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_034",
+      "channel": "social",
+      "sender": "@twitter_support",
+      "text": "Your Twitter Blue subscription failed. Update payment: https://twitter.com/i/payments",
+      "urls": ["https://twitter.com/i/payments"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_035",
+      "channel": "email",
+      "sender": "admin@zoom.us",
+      "text": "Your Zoom meeting recording is ready. View: https://zoom.us/recording/abc123",
+      "urls": ["https://zoom.us/recording/abc123"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_036",
+      "channel": "email",
+      "sender": "security@icici-bank-update.tk",
+      "text": "ICICI Bank: Your account has been compromised. Immediate action required: https://icici-bank-update.tk/secure",
+      "urls": ["https://icici-bank-update.tk/secure"],
+      "expected_level": "Critical",
+      "expected_signals": ["deadline_threat", "credential_request", "authority_claim", "brand_in_subdomain", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_037",
+      "channel": "url",
+      "sender": null,
+      "text": "",
+      "urls": ["https://paypal.com@malicious-site.com/login"],
+      "expected_level": "High",
+      "expected_signals": ["at_trick", "brand_in_subdomain", "credential_request"]
+    },
+    {
+      "id": "fixture_038",
+      "channel": "email",
+      "sender": "support@stripe.com",
+      "text": "Your Stripe payout of $1,234.56 is on the way. Estimated arrival: 2 business days.",
+      "urls": ["https://dashboard.stripe.com/payouts"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_039",
+      "channel": "sms",
+      "sender": "Airtel",
+      "text": "आपका Airtel नंबर बंद होने वाला है। KYC अपडेट करें: https://airtel-kyc.cf/update",
+      "urls": ["https://airtel-kyc.cf/update"],
+      "expected_level": "Critical",
+      "expected_signals": ["deadline_threat", "credential_request", "brand_in_subdomain", "suspicious_tld", "authority_claim"]
+    },
+    {
+      "id": "fixture_040",
+      "channel": "email",
+      "sender": "noreply@slack.com",
+      "text": "New sign-in to your Slack workspace from Chrome on Windows. If this wasn't you: https://slack.com/account/security",
+      "urls": ["https://slack.com/account/security"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_041",
+      "channel": "email",
+      "sender": "billing@aws.amazon.com",
+      "text": "Your AWS invoice for August 2024 is ready. Amount: $45.67. View: https://aws.amazon.com/billing",
+      "urls": ["https://aws.amazon.com/billing"],
+      "expected_level": "Low",
+      "expected_signals": []
+    },
+    {
+      "id": "fixture_042",
+      "channel": "email",
+      "sender": "verify@facebook-security.ml",
+      "text": "Facebook Security: Your account will be permanently disabled. Verify now: https://facebook-security.ml/verify",
+      "urls": ["https://facebook-security.ml/verify"],
+      "expected_level": "Critical",
+      "expected_signals": ["deadline_threat", "credential_request", "authority_claim", "brand_in_subdomain", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_043",
+      "channel": "url",
+      "sender": null,
+      "text": "",
+      "urls": ["https://bit.ly/3xYzK9"],
+      "expected_level": "Medium",
+      "expected_signals": ["url_shortener"]
+    },
+    {
+      "id": "fixture_044",
+      "channel": "email",
+      "sender": "hr@infosys-careers.xyz",
+      "text": "Infosys Hiring: Freshers welcome! ₹3.5 LPA. Work from home. No interview - direct joining. Send documents and ₹5000 training fee.",
+      "urls": ["https://infosys-jobs.xyz/apply"],
+      "expected_level": "High",
+      "expected_signals": ["job_investment_lure", "unusual_payment", "credential_request", "brand_in_subdomain", "suspicious_tld"]
+    },
+    {
+      "id": "fixture_045",
+      "channel": "sms",
+      "sender": "Paytm",
+      "text": "Paytm KYC expires today! Update now to avoid wallet suspension: https://paytm-kyc.tk/verify",
+      "urls": ["https://paytm-kyc.tk/verify"],
+      "expected_level": "Critical",
+      "expected_signals": ["deadline_threat", "credential_request", "brand_in_subdomain", "suspicious_tld", "authority_claim"]
+    }
+  ]
+}

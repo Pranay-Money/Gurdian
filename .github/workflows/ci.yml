@@ -1,0 +1,439 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ============================================================================
+  # Extension Tests
+  # ============================================================================
+  extension-lint:
+    name: Extension Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+
+  extension-test:
+    name: Extension Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+      - run: npm test -- --coverage
+
+  extension-security:
+    name: Extension Security Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+      - name: Run security tests
+        run: npm run test:security
+      - name: Check for eval/Function constructor
+        run: |
+          if grep -r "eval(" src/ --include="*.ts" --include="*.tsx" | grep -v "test" | grep -v ".d.ts"; then
+            echo "ERROR: eval() found in source code"
+            exit 1
+          fi
+          if grep -r "new Function" src/ --include="*.ts" --include="*.tsx" | grep -v "test" | grep -v ".d.ts"; then
+            echo "ERROR: Function constructor found in source code"
+            exit 1
+          fi
+      - name: Check CSP compliance
+        run: |
+          if grep -r "innerHTML\|outerHTML\|insertAdjacentHTML" src/ --include="*.ts" --include="*.tsx" | grep -v "test" | grep -v ".d.ts" | grep -v "sanitize"; then
+            echo "ERROR: Unsafe DOM manipulation found"
+            exit 1
+          fi
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+      - name: Check for hardcoded secrets
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config: .gitleaks.toml
+          verbose: true
+
+  extension-build:
+    name: Extension Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./extension
+    needs: [extension-lint, extension-test, extension-security]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run verify-dist
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-dist
+          path: extension/dist/
+          retention-days: 7
+
+  extension-e2e:
+    name: Extension E2E Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./extension
+    needs: extension-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@latest
+      - run: npm ci
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Run E2E tests
+        run: npm run test:e2e
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: extension/test-results/
+          retention-days: 7
+
+  # ============================================================================
+  # API Tests
+  # ============================================================================
+  api-lint:
+    name: API Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - run: pip install -e ".[dev,ml]"
+      - run: ruff check src tests
+      - run: mypy src
+
+  api-test:
+    name: API Unit & Integration Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: guardian
+          POSTGRES_PASSWORD: guardian
+          POSTGRES_DB: guardian
+        ports: 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U guardian -d guardian"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - run: pip install -e ".[dev,ml]"
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://guardian:guardian@localhost:5432/guardian
+          REDIS_URL: redis://localhost:6379/0
+          APP_ENV: test
+          DEBUG: "true"
+          SECRET_KEY: test-secret-key
+        run: python -m pytest tests/ -v --cov=src --cov-report=xml
+
+  api-security:
+    name: API Security Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: guardian
+          POSTGRES_PASSWORD: guardian
+          POSTGRES_DB: guardian
+        ports: 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U guardian -d guardian"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - run: pip install -e ".[dev,ml]"
+      - name: Install security test deps
+        run: pip install pip-audit httpx
+      - name: Dependency audit
+        run: pip-audit
+      - name: Run security tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://guardian:guardian@localhost:5432/guardian
+          REDIS_URL: redis://localhost:6379/0
+          APP_ENV: test
+          DEBUG: "true"
+          SECRET_KEY: test-secret-key
+        run: python -m pytest tests/security/ -v
+      - name: Check for hardcoded secrets
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config: .gitleaks.toml
+          verbose: true
+
+  # ============================================================================
+  # ML Tests
+  # ============================================================================
+  ml-test:
+    name: ML Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - run: pip install -e ".[dev]"
+      - run: python -m pytest tests/ -v --cov=src --cov-report=xml
+
+  # ============================================================================
+  # Evaluation Harness
+  # ============================================================================
+  evaluation:
+    name: Evaluation Harness
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: guardian
+          POSTGRES_PASSWORD: guardian
+          POSTGRES_DB: guardian
+        ports: 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U guardian -d guardian"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 5
+    needs: [api-test, api-security]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - run: pip install -e ".[dev,ml]"
+      - name: Run evaluation harness
+        env:
+          DATABASE_URL: postgresql+asyncpg://guardian:guardian@localhost:5432/guardian
+          REDIS_URL: redis://localhost:6379/0
+          APP_ENV: test
+          DEBUG: "true"
+          SECRET_KEY: test-secret-key
+        run: python -m pytest tests/evaluation/ -v --tb=short
+      - name: Upload metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-metrics
+          path: api/docs/METRICS.md
+          retention-days: 30
+
+  # ============================================================================
+  # Adversarial Tests
+  # ============================================================================
+  adversarial:
+    name: Adversarial Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./extension
+    needs: extension-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+      - name: Run adversarial tests
+        run: npm run test:adversarial
+      - name: Upload adversarial results
+        uses: actions/upload-artifact@v4
+        with:
+          name: adversarial-results
+          path: extension/tests/adversarial/results/
+          retention-days: 30
+
+  # ============================================================================
+  # Accessibility & i18n
+  # ============================================================================
+  a11y-i18n:
+    name: Accessibility & i18n
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./extension
+    needs: extension-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+      - name: Run a11y tests
+        run: npm run test:a11y
+      - name: Run i18n tests
+        run: npm run test:i18n
+
+  # ============================================================================
+  # Documentation
+  # ============================================================================
+  docs:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check LIMITATIONS.md exists
+        run: |
+          if [ ! -f docs/LIMITATIONS.md ]; then
+            echo "ERROR: docs/LIMITATIONS.md not found"
+            exit 1
+          fi
+      - name: Check METRICS.md exists
+        run: |
+          if [ ! -f docs/METRICS.md ]; then
+            echo "ERROR: docs/METRICS.md not found"
+            exit 1
+          fi
+      - name: Verify METRICS.md has measured numbers
+        run: |
+          if ! grep -q "p50\|p95\|precision\|recall\|false-positive" docs/METRICS.md; then
+            echo "ERROR: METRICS.md must contain measured numbers (p50, p95, precision, recall, false-positive rate)"
+            exit 1
+          fi
+
+  # ============================================================================
+  # Final Gate
+  # ============================================================================
+  final-gate:
+    name: Final Gate (All Checks Pass)
+    runs-on: ubuntu-latest
+    needs:
+      - extension-lint
+      - extension-test
+      - extension-security
+      - extension-build
+      - extension-e2e
+      - api-lint
+      - api-test
+      - api-security
+      - ml-test
+      - evaluation
+      - adversarial
+      - a11y-i18n
+      - docs
+    if: always()
+    steps:
+      - name: Check all required jobs passed
+        run: |
+          REQUIRED_JOBS=(
+            "extension-lint"
+            "extension-test"
+            "extension-security"
+            "extension-build"
+            "extension-e2e"
+            "api-lint"
+            "api-test"
+            "api-security"
+            "ml-test"
+            "evaluation"
+            "adversarial"
+            "a11y-i18n"
+            "docs"
+          )
+          for job in "${REQUIRED_JOBS[@]}"; do
+            result="${{ needs.$job.result }}"
+            if [ "$result" != "success" ]; then
+              echo "FAILED: $job = $result"
+              exit 1
+            fi
+          done
+          echo "All required jobs passed!"

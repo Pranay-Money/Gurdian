@@ -1,0 +1,219 @@
+# Signal Weights Configuration
+# Used by scoring.py for weighted risk scoring
+
+weights:
+  # Text signals (linguistic patterns)
+  text:
+    urgency:
+      weight: 8
+      cap: 16
+      category: "linguistic"
+    deadline_threat:
+      weight: 12
+      cap: 24
+      category: "linguistic"
+    credential_request:
+      weight: 15
+      cap: 30
+      category: "sensitive_request"
+    unusual_payment:
+      weight: 18
+      cap: 36
+      category: "sensitive_request"
+    prize_lottery:
+      weight: 10
+      cap: 20
+      category: "linguistic"
+    job_investment_lure:
+      weight: 10
+      cap: 20
+      category: "linguistic"
+    generic_greeting:
+      weight: 5
+      cap: 10
+      category: "linguistic"
+    secrecy:
+      weight: 8
+      cap: 16
+      category: "linguistic"
+    authority_claim:
+      weight: 7
+      cap: 14
+      category: "linguistic"
+    call_to_click:
+      weight: 6
+      cap: 12
+      category: "linguistic"
+    excessive_caps_punct:
+      weight: 4
+      cap: 8
+      category: "linguistic"
+
+  # URL signals (structural/technical)
+  url:
+    suspicious_tld:
+      weight: 10
+      cap: 20
+      category: "structural"
+    ip_host:
+      weight: 15
+      cap: 15
+      category: "structural"
+    punycode_idn:
+      weight: 12
+      cap: 12
+      category: "structural"
+    at_trick:
+      weight: 10
+      cap: 10
+      category: "structural"
+    url_shortener:
+      weight: 8
+      cap: 16
+      category: "structural"
+    suspicious_path:
+      weight: 7
+      cap: 14
+      category: "structural"
+    port_anomaly:
+      weight: 6
+      cap: 6
+      category: "structural"
+    encoded_chars:
+      weight: 5
+      cap: 10
+      category: "structural"
+    subdomain_depth:
+      weight: 3
+      cap: 15
+      category: "structural"
+    high_entropy:
+      weight: 8
+      cap: 8
+      category: "structural"
+    long_url:
+      weight: 3
+      cap: 6
+      category: "structural"
+    no_https:
+      weight: 5
+      cap: 5
+      category: "structural"
+    suspicious_subdomain:
+      weight: 8
+      cap: 16
+      category: "structural"
+    domain_age_new:
+      weight: 10
+      cap: 10
+      category: "metadata"
+    redirects_chain:
+      weight: 8
+      cap: 16
+      category: "behavioral"
+
+  # Impersonation signals
+  impersonation:
+    brand_in_subdomain:
+      weight: 20
+      cap: 40
+      category: "impersonation"
+    typosquat:
+      weight: 25
+      cap: 50
+      category: "impersonation"
+    sender_domain_mismatch:
+      weight: 15
+      cap: 30
+      category: "impersonation"
+    free_mailbox_org_claim:
+      weight: 18
+      cap: 18
+      category: "impersonation"
+    brand_mismatch_link:
+      weight: 20
+      cap: 20
+      category: "impersonation"
+    homoglyph_attack:
+      weight: 22
+      cap: 22
+      category: "impersonation"
+
+  # Reputation signals
+  reputation:
+    blocklist_hit:
+      weight: 100
+      cap: 100
+      category: "reputation"
+    google_safe_browsing:
+      weight: 80
+      cap: 80
+      category: "reputation"
+    virustotal_malicious:
+      weight: 60
+      cap: 60
+      category: "reputation"
+    abuseipdb:
+      weight: 30
+      cap: 30
+      category: "reputation"
+    urlhaus:
+      weight: 40
+      cap: 40
+      category: "reputation"
+    phishtank:
+      weight: 50
+      cap: 50
+      category: "reputation"
+
+# Category caps to avoid double counting within same category
+category_caps:
+  linguistic: 40
+  structural: 35
+  sensitive_request: 45
+  impersonation: 60
+  metadata: 15
+  behavioral: 25
+  reputation: 100
+
+# Combo bonuses (applied when multiple categories triggered)
+combo_bonuses:
+  urgency_plus_sensitive_plus_link:
+    description: "Urgency + Credential/Payment request + URL present"
+    bonus: 15
+    requires:
+      - "urgency"
+      - "credential_request"
+      - "suspicious_tld"
+  urgency_plus_impersonation:
+    description: "Urgency + Brand impersonation"
+    bonus: 10
+    requires:
+      - "urgency"
+      - "brand_in_subdomain"
+  sensitive_plus_impersonation:
+    description: "Credential request + Brand impersonation"
+    bonus: 15
+    requires:
+      - "credential_request"
+      - "brand_in_subdomain"
+  multiple_impersonation:
+    description: "Multiple impersonation signals (typosquat + subdomain + sender mismatch)"
+    bonus: 10
+    requires:
+      - count: 3
+        category: "impersonation"
+
+# Risk level thresholds
+thresholds:
+  low: 20
+  medium: 20
+  high: 45
+  critical: 70
+
+# Blocklist forces critical
+blocklist_forces_critical: true
+
+# Score bounds
+score_min: 0
+score_max: 100

@@ -1,0 +1,209 @@
+version: '3.8'
+
+# Production-parity Docker Compose for local testing
+# Usage: docker-compose -f docker-compose.prod.yml up --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: guardian-postgres-prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-guardian}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-guardian}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-guardian} -d ${POSTGRES_DB:-guardian}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  redis:
+    image: redis:7-alpine
+    container_name: guardian-redis-prod
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile.prod
+    container_name: guardian-api-prod
+    environment:
+      # Application
+      APP_ENV: production
+      DEBUG: "false"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SECRET_KEY: ${SECRET_KEY}
+      
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-guardian}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-guardian}
+      DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-20}
+      DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-40}
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      REDIS_CACHE_TTL: ${REDIS_CACHE_TTL:-3600}
+      
+      # Device Tokens
+      DEVICE_TOKEN_TTL_DAYS: ${DEVICE_TOKEN_TTL_DAYS:-365}
+      DEVICE_TOKEN_ROTATION_GRACE_SECONDS: ${DEVICE_TOKEN_ROTATION_GRACE_SECONDS:-300}
+      
+      # Rate Limits
+      RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
+      RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
+      ANALYZE_RATE_LIMIT: ${ANALYZE_RATE_LIMIT:-30}
+      
+      # Intel API Keys
+      GOOGLE_SAFE_BROWSING_API_KEY: ${GOOGLE_SAFE_BROWSING_API_KEY}
+      VIRUSTOTAL_API_KEY: ${VIRUSTOTAL_API_KEY}
+      PHISHTANK_API_KEY: ${PHISHTANK_API_KEY}
+      URLHAUS_API_KEY: ${URLHAUS_API_KEY}
+      
+      # Intel Adapter Config
+      GSB_TIMEOUT: ${GSB_TIMEOUT:-5}
+      GSB_RATE_LIMIT: ${GSB_RATE_LIMIT:-10000}
+      VT_TIMEOUT: ${VT_TIMEOUT:-10}
+      VT_RATE_LIMIT: ${VT_RATE_LIMIT:-500}
+      OP_TIMEOUT: ${OP_TIMEOUT:-30}
+      OP_RATE_LIMIT: ${OP_RATE_LIMIT:-10}
+      PT_TIMEOUT: ${PT_TIMEOUT:-30}
+      PT_RATE_LIMIT: ${PT_RATE_LIMIT:-10}
+      RDAP_TIMEOUT: ${RDAP_TIMEOUT:-5}
+      RDAP_RATE_LIMIT: ${RDAP_RATE_LIMIT:-100}
+      DNS_TIMEOUT: ${DNS_TIMEOUT:-3}
+      DNS_RATE_LIMIT: ${DNS_RATE_LIMIT:-200}
+      TLS_TIMEOUT: ${TLS_TIMEOUT:-5}
+      TLS_RATE_LIMIT: ${TLS_RATE_LIMIT:-100}
+      
+      # Cache TTL by Verdict
+      CACHE_TTL_MALICIOUS: ${CACHE_TTL_MALICIOUS:-86400}
+      CACHE_TTL_SUSPICIOUS: ${CACHE_TTL_SUSPICIOUS:-21600}
+      CACHE_TTL_CLEAN: ${CACHE_TTL_CLEAN:-3600}
+      CACHE_TTL_UNKNOWN: ${CACHE_TTL_UNKNOWN:-300}
+      
+      # Privacy
+      RETENTION_DAYS: ${RETENTION_DAYS:-30}
+      DEFAULT_STORE_RAW_TEXT: ${DEFAULT_STORE_RAW_TEXT:-false}
+      
+      # Blocklist
+      BLOCKLIST_SYNC_INTERVAL_SECONDS: ${BLOCKLIST_SYNC_INTERVAL_SECONDS:-300}
+      BLOCKLIST_MAX_AGE_DAYS: ${BLOCKLIST_MAX_AGE_DAYS:-30}
+      BLOCKLIST_VERSION_KEY: blocklist:version
+      
+      # CORS - must match extension ID in production
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      
+      # Observability
+      SENTRY_DSN: ${SENTRY_DSN}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+      SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
+      SENTRY_PROFILES_SAMPLE_RATE: ${SENTRY_PROFILES_SAMPLE_RATE:-0.1}
+      
+      # Metrics
+      PROMETHEUS_MULTIPROC_DIR: /tmp/prometheus_multiproc
+    volumes:
+      - ./api/data:/app/data
+      - ./api/models:/app/models:ro
+      - prometheus_multiproc:/tmp/prometheus_multiproc
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=5).raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: guardian-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Grafana for visualization (optional)
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: guardian-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  prometheus_multiproc:
+  grafana_data:
+
+networks:
+  default:
+    name: guardian-prod-network

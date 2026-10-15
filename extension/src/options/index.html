@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guardian Settings</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #1f2937; background: #f9fafb; min-width: 600px; }
+    .container { max-width: 720px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+    .subtitle { color: #6b7280; margin-bottom: 24px; }
+    .section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #f3f4f6; }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-info { flex: 1; }
+    .setting-title { font-weight: 500; margin-bottom: 4px; }
+    .setting-desc { font-size: 13px; color: #6b7280; }
+    .toggle { position: relative; width: 52px; height: 28px; flex-shrink: 0; margin-left: 16px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #d1d5db; border-radius: 28px; transition: .3s; }
+    .toggle-slider:before { position: absolute; content: ''; height: 22px; width: 22px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .toggle input:checked + .toggle-slider { background: #2563eb; }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(24px); }
+    .toggle input:focus-visible + .toggle-slider { outline: 2px solid #2563eb; outline-offset: 2px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
+    .input-label { font-size: 13px; font-weight: 500; color: #374151; }
+    .input-field { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s; }
+    .input-field:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .input-hint { font-size: 12px; color: #9ca3af; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #e5e7eb; color: #374151; }
+    .btn-secondary:hover { background: #d1d5db; }
+    .btn-danger { background: #fee2e2; color: #dc2626; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-group { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+    .card { background: #f9fafb; border-radius: 8px; padding: 16px; margin-top: 12px; }
+    .card-title { font-weight: 600; margin-bottom: 8px; }
+    .card-text { font-size: 13px; color: #6b7280; line-height: 1.5; }
+    .api-status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .api-status-card { padding: 16px; background: white; border-radius: 8px; border: 1px solid #e5e7eb; display: flex; align-items: center; gap: 12px; }
+    .api-status-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .api-status-dot.online { background: #16a34a; }
+    .api-status-dot.offline { background: #ef4444; }
+    .api-status-dot.unknown { background: #9ca3af; }
+    .api-status-info { flex: 1; }
+    .api-status-name { font-weight: 500; }
+    .api-status-desc { font-size: 12px; color: #6b7280; }
+    .footer { text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; }
+    .danger-zone { border: 1px solid #fecaca; background: #fef2f2; }
+    .danger-zone .section-title { color: #dc2626; }
+    
+    /* Site toggles */
+    .sites-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+    .site-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; background: white; transition: box-shadow 0.2s, border-color 0.2s; }
+    .site-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #d1d5db; }
+    .site-card.enabled { border-color: #2563eb; background: #eff6ff; }
+    .site-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .site-name { font-weight: 600; font-size: 14px; color: #1f2937; }
+    .site-icon { width: 28px; height: 28px; border-radius: 6px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .site-desc { font-size: 12px; color: #6b7280; margin-bottom: 12px; }
+    .site-status { font-size: 12px; font-weight: 500; padding: 4px 8px; border-radius: 4px; }
+    .site-status.enabled { background: #dcfce7; color: #16a34a; }
+    .site-status.disabled { background: #f3f4f6; color: #6b7280; }
+    .site-status.pending { background: #fef3c7; color: #d97706; }
+    
+    .master-toggle-row { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; }
+    .permission-notice { 
+      display: none; 
+      padding: 12px; 
+      background: #fef3c7; 
+      border: 1px solid #fcd34d; 
+      border-radius: 8px; 
+      margin-top: 12px; 
+      font-size: 13px; 
+      color: #92400e;
+    }
+    .permission-notice.visible { display: block; }
+    .permission-notice a { color: #2563eb; text-decoration: none; }
+    .permission-notice a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Guardian Settings</h1>
+    <p class="subtitle">Configure your protection preferences</p>
+
+    <div class="section">
+      <div class="section-title">🔌 API Connection</div>
+      <div class="api-status-grid" id="apiStatusGrid">
+        <div class="api-status-card">
+          <span class="api-status-dot offline" id="apiDot"></span>
+          <div class="api-status-info">
+            <div class="api-status-name">Backend API</div>
+            <div class="api-status-desc" id="apiDesc">Checking...</div>
+          </div>
+        </div>
+        <div class="api-status-card">
+          <span class="api-status-dot unknown" id="mlDot"></span>
+          <div class="api-status-info">
+            <div class="api-status-name">ML Model</div>
+            <div class="api-status-desc" id="mlDesc">Checking...</div>
+          </div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label" for="apiBaseUrl">API Base URL</label>
+        <input type="url" class="input-field" id="apiBaseUrl" placeholder="http://localhost:8000/v1" />
+        <span class="input-hint">Your Guardian API endpoint (must end with /v1)</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🛡️ Protection Settings</div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-title">Web Protection</div>
+          <div class="setting-desc">Block malicious and phishing websites in real-time</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="protectionEnabled">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-title">Enforcement Policy</div>
+          <div class="setting-desc">How to handle detected threats</div>
+        </div>
+        <div class="radio-group" style="display: flex; gap: 16px; align-items: center;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="radio" name="enforcementPolicy" id="enforcementWarn" value="warn" style="width: 16px; height: 16px;">
+            <span>Warn (default)</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="radio" name="enforcementPolicy" id="enforcementBlock" value="block" style="width: 16px; height: 16px;">
+            <span>Block</span>
+          </label>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-title">Inline Risk Badges</div>
+          <div class="setting-desc">Show risk indicators on suspicious pages (Medium risk)</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="showBadges">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-title">Anonymous Telemetry</div>
+          <div class="setting-desc">Send anonymized detection data to improve the model</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="sendTelemetry">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🔗 Link Scanning in Webmail & Messaging</div>
+      <div class="setting-row master-toggle-row">
+        <div class="setting-info">
+          <div class="setting-title">Enable Link Scanning</div>
+          <div class="setting-desc">Analyze links in supported webmail and messaging sites (requires site permissions)</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="linkScanningEnabled">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      
+      <div id="permissionNotice" class="permission-notice">
+        <strong>Permissions Required:</strong> Enabling specific sites below will request host permissions for those domains. 
+        You can review and grant these in the extension details page.
+      </div>
+      
+      <div class="sites-grid" id="sitesGrid"></div>
+      
+      <div class="card" style="margin-top: 16px;">
+        <div class="card-title">How it works</div>
+        <div class="card-text">
+          When enabled, Guardian scans links in your conversations on supported sites:
+          <ul style="margin: 8px 0 0 20px; font-size: 13px; color: #6b7280;">
+            <li>Collects only link URLs and visible text (never message content)</li>
+            <li>Detects display-text mismatches (e.g., "PayPal" link pointing elsewhere)</li>
+            <li>Shows risk badges: <span style="color: #f59e0b;">●</span> Medium, <span style="color: #ef4444;">●</span> High/Critical</li>
+            <li>Intercepts clicks on High/Critical links with an unspoofable warning dialog</li>
+            <li>All analysis happens locally first; unknown domains checked via secure API</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🔧 Advanced</div>
+      <div class="input-group">
+        <label class="input-label" for="blocklistUrl">Custom Blocklist URL (JSON)</label>
+        <input type="url" class="input-field" id="blocklistUrl" placeholder="https://example.com/blocklist.json" />
+        <span class="input-hint">Optional: Custom blocklist in Guardian format (auto-synced every 5 min)</span>
+      </div>
+      <div class="input-group" style="margin-top: 12px;">
+        <label class="input-label" for="customRules">Custom Rules (JSON)</label>
+        <textarea class="input-field" id="customRules" rows="4" placeholder='{"block": ["example.com"], "allow": ["trusted.example.com"]}' style="font-family: monospace; resize: vertical;"></textarea>
+        <span class="input-hint">Override block/allow decisions for specific domains</span>
+      </div>
+    </div>
+
+    <div class="section danger-zone">
+      <div class="section-title">⚠️ Danger Zone</div>
+      <div class="card">
+        <div class="card-title">Reset All Data</div>
+        <div class="card-text">This will clear your history, whitelist, reported sites, and settings. This action cannot be undone.</div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-danger" id="resetData">Reset All Data</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      Guardian v0.1.0 &mdash; <a href="https://github.com/guardian" target="_blank">Documentation</a> &middot; <a href="https://github.com/guardian/issues" target="_blank">Report Issue</a>
+    </div>
+  </div>
+
+  <script type="module" src="./index.tsx"></script>
+</body>
+</html>

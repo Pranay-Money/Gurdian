@@ -1,0 +1,207 @@
+groups:
+  - name: guardian-api-alerts
+    interval: 30s
+    rules:
+      # High API latency
+      - alert: GuardianAPIHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(guardian_http_request_duration_seconds_bucket[5m])) by (le, handler)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: guardian-api
+        annotations:
+          summary: "High API latency (p95 > 500ms)"
+          description: "Handler {{ $labels.handler }} p95 latency is {{ $value | printf \"%.3f\" }}s"
+          runbook_url: "https://github.com/guardian/guardian/blob/main/docs/runbooks/high-latency.md"
+
+      # High error rate
+      - alert: GuardianAPIHighErrorRate
+        expr: |
+          sum(rate(guardian_http_requests_total{status=~"5.."}[5m]))
+          /
+          sum(rate(guardian_http_requests_total[5m]))
+          > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          service: guardian-api
+        annotations:
+          summary: "High API error rate (>1%)"
+          description: "Error rate is {{ $value | printf \"%.2%\" }} for the last 5 minutes"
+          runbook_url: "https://github.com/guardian/guardian/blob/main/docs/runbooks/high-error-rate.md"
+
+      # Intel adapter failures
+      - alert: GuardianIntelAdapterFailures
+        expr: |
+          sum(rate(guardian_intel_adapter_failures_total[5m]))
+          /
+          sum(rate(guardian_intel_adapter_requests_total[5m]))
+          > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: guardian-api
+        annotations:
+          summary: "Intel adapter failure rate >10%"
+          description: "Adapter {{ $labels.adapter }} failure rate is {{ $value | printf \"%.2%\" }}"
+          runbook_url: "https://github.com/guardian/guardian/blob/main/docs/runbooks/intel-adapter-failures.md"
+
+      # Low cache hit rate
+      - alert: GuardianLowCacheHitRate
+        expr: |
+          sum(rate(guardian_cache_hits_total[5m]))
+          /
+          (sum(rate(guardian_cache_hits_total[5m])) + sum(rate(guardian_cache_misses_total[5m])))
+          < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: guardian-api
+        annotations:
+          summary: "Cache hit rate <50%"
+          description: "Cache hit rate is {{ $value | printf \"%.2%\" }}. Check Redis connectivity and TTL settings."
+          runbook_url: "https://github.com/guardian/guardian/blob/main/docs/runbooks/low-cache-hit-rate.md"
+
+      # Blocklist sync failures
+      - alert: GuardianBlocklistSyncFailures
+        expr: |
+          increase(guardian_blocklist_sync_failures_total[15m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: guardian-api
+        annotations:
+          summary: "Blocklist sync failed"
+          description: "Blocklist synchronization has failed. Extension will use stale blocklist."
+          runbook_url: "https://github.com/guardian/guardian/blob/main/docs/runbooks/blocklist-sync-failure.md"
+
+      # Database connection pool exhaustion
+      - alert: GuardianDBPoolExhausted
+        expr: |
+          guardian_db_pool_checked_out / guardian_db_pool_size > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: guardian-api
+        annotations:
+          summary: "Database connection pool >90% utilized"
+          description: "Pool usage: {{ $value | printf \"%.2%\" }}. Consider increasing pool size or optimizing queries."
+          runbook_url: "https://github.com/guardian/guardian/blob/main/docs/runbooks/db-pool-exhausted.md"
+
+      # High memory usage
+      - alert: GuardianHighMemoryUsage
+        expr: |
+          (process_resident_bytes_bytes / process_virtual_bytes_bytes) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          service: guardian-api
+        annotations:
+          summary: "High memory usage (>85%)"
+          description: "Process memory: {{ $value | printf \"%.2%\" }}. Check for memory leaks."
+          runbook_url: "https://github.com/guardian/guardian/blob/main/docs/runbooks/high-memory.md"
+
+      # Certificate expiry (if using custom certs)
+      - alert: GuardianCertExpiringSoon
+        expr: |
+          ssl_certificate_expiry_timestamp_seconds - time() < 86400 * 30
+        for: 1h
+        labels:
+          severity: warning
+          service: guardian-api
+        annotations:
+          summary: "SSL certificate expiring within 30 days"
+          description: "Certificate for {{ $labels.domain }} expires in {{ ($value / 86400) | printf \"%.0f\" }} days"
+
+  - name: guardian-infrastructure-alerts
+    interval: 60s
+    rules:
+      # PostgreSQL down
+      - alert: GuardianPostgresDown
+        expr: |
+          pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgres
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL instance {{ $labels.instance }} has been down for 1 minute"
+
+      # Redis down
+      - alert: GuardianRedisDown
+        expr: |
+          redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance {{ $labels.instance }} has been down for 1 minute"
+
+      # Disk space
+      - alert: GuardianDiskSpaceCritical
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: "Disk space critical (<10% free)"
+          description: "Instance {{ $labels.instance }} has {{ $value | printf \"%.2%\" }} disk space remaining"
+
+      # CPU saturation
+      - alert: GuardianCPUSaturation
+        expr: |
+          avg(rate(node_cpu_seconds_total{mode="wait"}[5m])) by (instance) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High CPU wait time (>20%)"
+          description: "Instance {{ $labels.instance }} CPU wait: {{ $value | printf \"%.2%\" }}. Possible I/O bottleneck."
+
+  - name: guardian-business-alerts
+    interval: 300s
+    rules:
+      # No analyses in 30 minutes (possible outage)
+      - alert: GuardianNoAnalyses
+        expr: |
+          increase(guardian_analyses_total[30m]) == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: guardian-api
+        annotations:
+          summary: "No analyses performed in 30 minutes"
+          description: "Possible API outage or traffic drop. Check health endpoint and logs."
+
+      # High critical risk detections (potential campaign)
+      - alert: GuardianHighCriticalDetections
+        expr: |
+          increase(guardian_detections_total{level="Critical"}[1h]) > 100
+        for: 5m
+        labels:
+          severity: info
+          service: guardian-api
+        annotations:
+          summary: "High volume of Critical detections"
+          description: "{{ $value | printf \"%.0f\" }} Critical detections in last hour. Possible phishing campaign."
+
+      # Rate limit exhaustion
+      - alert: GuardianRateLimitExhausted
+        expr: |
+          sum(rate(guardian_rate_limit_exceeded_total[5m])) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: guardian-api
+        annotations:
+          summary: "High rate limit rejections"
+          description: "{{ $value | printf \"%.0f\" }} requests/minute rejected due to rate limiting"

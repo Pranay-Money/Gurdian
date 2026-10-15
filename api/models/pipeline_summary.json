@@ -1,0 +1,51 @@
+{
+  "version_hash": "f0753011fd8aa1f1",
+  "train_info": {
+    "version_hash": "f0753011fd8aa1f1",
+    "train_size": 107684,
+    "val_size": 11893,
+    "n_features": 8029
+  },
+  "eval_results": {
+    "logistic_regression": {
+      "roc_auc": 0.9981981865354782,
+      "pr_auc": 0.9972874770628514,
+      "f1": 0.9917264606823839,
+      "fpr_at_1pct": 0.00482315112540193,
+      "fpr_at_01pct": 0.4596652165689427,
+      "ece": 0.0350681494950983,
+      "brier_score": 0.012876446713256634
+    },
+    "lightgbm": {
+      "roc_auc": 0.9991046744939296,
+      "pr_auc": 0.9989300046950773,
+      "f1": 0.9954084979228919,
+      "fpr_at_1pct": 0.0005201437488178551,
+      "fpr_at_01pct": 0.529175335729147,
+      "ece": 0.002167604509710269,
+      "brier_score": 0.0029951468660153555
+    }
+  },
+  "time_based_eval_results": {
+    "logistic_regression": {
+      "roc_auc": NaN,
+      "pr_auc": 0.0,
+      "f1": 0.0,
+      "fpr_at_1pct": 1.0,
+      "fpr_at_01pct": 1.0,
+      "ece": 0.012320496746921834,
+      "brier_score": 0.004420488881967115
+    },
+    "lightgbm": {
+      "roc_auc": NaN,
+      "pr_auc": 0.0,
+      "f1": 0.0,
+      "fpr_at_1pct": 1.0,
+      "fpr_at_01pct": 1.0,
+      "ece": 0.010362045085540391,
+      "brier_score": 0.0037055207640331114
+    }
+  },
+  "export_path": "D:\\IEEE\\api\\models\\model.joblib",
+  "feature_count": 8029
+}

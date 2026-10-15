@@ -1,0 +1,160 @@
+# TLD Reputation List
+# Scores: -10 (highly suspicious) to +10 (highly trusted)
+# Used by url_engine for TLD reputation scoring
+
+tld_reputation:
+  # Highly trusted
+  com: 10
+  org: 8
+  net: 8
+  edu: 10
+  gov: 10
+  mil: 10
+  int: 8
+
+  # Country codes - generally trusted
+  in: 7
+  uk: 7
+  us: 7
+  ca: 7
+  au: 7
+  de: 7
+  fr: 7
+  jp: 7
+  sg: 7
+  hk: 7
+  ae: 6
+  sa: 6
+  br: 6
+  mx: 6
+  nl: 7
+  ch: 7
+  se: 7
+  no: 7
+  dk: 7
+  fi: 7
+  ie: 7
+  nz: 7
+  za: 6
+  kr: 7
+  tw: 6
+  my: 5
+  th: 5
+  vn: 5
+  ph: 5
+  id: 5
+
+  # Moderately trusted
+  io: 5
+  ai: 5
+  co: 5
+  dev: 6
+  app: 6
+  cloud: 5
+  tech: 5
+  online: 4
+  site: 4
+  website: 4
+  space: 4
+  digital: 5
+  solutions: 5
+  services: 5
+  systems: 5
+  network: 5
+  software: 5
+  company: 5
+  group: 5
+  agency: 5
+  studio: 5
+  design: 5
+  media: 5
+  news: 5
+  blog: 4
+  shop: 5
+  store: 5
+  market: 4
+  biz: 4
+  info: 4
+  pro: 5
+  name: 4
+  me: 4
+
+  # Suspicious - often abused
+  xyz: -5
+  top: -5
+  club: -4
+  site: -3
+  space: -3
+  website: -3
+  click: -6
+  link: -6
+  download: -6
+  stream: -5
+  video: -4
+  photo: -4
+  pic: -4
+  image: -4
+  cam: -4
+  live: -3
+  fun: -3
+  party: -3
+  win: -5
+  bid: -5
+  trade: -4
+  loan: -4
+  credit: -4
+  bank: -3
+  finance: -3
+  investment: -3
+  crypto: -4
+  token: -4
+  coin: -4
+  wallet: -4
+
+  # Highly suspicious - frequently used for phishing/malware
+  tk: -10
+  ml: -10
+  ga: -10
+  cf: -10
+  pw: -8
+  gq: -10
+  cc: -6
+  men: -6
+  date: -6
+  review: -5
+  accountants: -4
+  lawyers: -4
+  engineer: -4
+  architect: -4
+
+  # URL shortener TLDs
+  ly: -3
+  gl: -3
+  gd: -4
+  sh: -4
+  st: -4
+  tc: -4
+  tl: -4
+  to: -4
+  nu: -4
+  ms: -4
+  mn: -4
+  me: -2
+  be: -2
+  tv: -3
+  fm: -4
+  am: -4
+
+  # New gTLDs - generally lower trust
+  click: -6
+  link: -6
+  shortcut: -5
+  short: -5
+  tiny: -5
+  cut: -5
+  brief: -5
+  redirect: -6
+  forward: -5
+  goto: -6
+  url: -5
+  urls: -5

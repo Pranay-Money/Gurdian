@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Access Blocked - Guardian</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #1f2937; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .container { width: 100%; max-width: 560px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 32px 24px; text-align: center; }
+    .icon { width: 72px; height: 72px; margin: 0 auto 16px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { font-size: 14px; opacity: 0.9; }
+    .risk-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 9999px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 12px; }
+    .risk-critical { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; }
+    .risk-high { background: #fef2f2; color: #dc2626; }
+    .risk-medium { background: #fffbeb; color: #f59e0b; }
+    .risk-low { background: #f0fdf4; color: #16a34a; }
+    .content { padding: 24px; }
+    .url-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 20px; word-break: break-all; font-family: monospace; font-size: 13px; color: #374151; max-height: 80px; overflow: auto; position: relative; }
+    .url-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: block; }
+    .reasons { margin-bottom: 24px; }
+    .reasons-title { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .reason-item { background: #f9fafb; border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 3px solid #e5e7eb; }
+    .reason-item.high { border-color: #dc2626; }
+    .reason-item.medium { border-color: #f59e0b; }
+    .reason-item.low { border-color: #16a34a; }
+    .reason-name { font-weight: 500; font-size: 13px; margin-bottom: 4px; }
+    .reason-desc { font-size: 12px; color: #4b5563; line-height: 1.5; }
+    .reason-evidence { margin-top: 8px; padding-left: 16px; font-size: 11px; color: #6b7280; }
+    .reason-evidence-item { margin: 2px 0; font-family: monospace; }
+    .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #6b7280; }
+    .detail-value { font-weight: 500; color: #111827; }
+    .actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+    .btn { flex: 1; min-width: 130px; padding: 14px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #e5e7eb; color: #374151; }
+    .btn-secondary:hover { background: #d1d5db; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-outline { background: white; color: #374151; border: 1px solid #d1d5db; }
+    .btn-outline:hover { background: #f9fafb; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .footer { padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #9ca3af; }
+    .footer a { color: #2563eb; text-decoration: none; margin: 0 8px; }
+    .proceed-section { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin-bottom: 16px; display: none; }
+    .proceed-section.show { display: block; }
+    .proceed-title { font-weight: 600; color: #92400e; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .proceed-text { font-size: 13px; color: #92400e; line-height: 1.5; margin-bottom: 12px; }
+    .checkbox-wrapper { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
+    .checkbox-wrapper input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; accent-color: #f59e0b; cursor: pointer; }
+    .checkbox-label { font-size: 13px; color: #92400e; line-height: 1.5; cursor: pointer; }
+    .countdown { font-size: 12px; color: #92400e; margin-bottom: 8px; }
+    .critical-notice { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 16px; display: none; }
+    .critical-notice.show { display: block; }
+    .critical-title { font-weight: 600; color: #dc2626; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .critical-text { font-size: 13px; color: #991b1b; line-height: 1.5; }
+    .allow-link { color: #2563eb; text-decoration: none; font-weight: 500; }
+    .allow-link:hover { text-decoration: underline; }
+    .unchecked-badge { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+    .hidden { display: none !important; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <header class="header">
+      <div class="icon" aria-hidden="true">🛡️</div>
+      <h1 class="title" id="blockTitle">Access Blocked</h1>
+      <p class="subtitle" id="blockMessage">This website has been blocked for your safety.</p>
+      <span class="risk-badge risk-critical" id="riskBadge" role="status" aria-live="polite">Critical Risk</span>
+    </header>
+
+    <div class="content">
+      <span class="url-label" id="urlLabel">Blocked URL</span>
+      <div class="url-box" id="blockedUrl" role="text" aria-label="Blocked URL"></div>
+
+      <div class="critical-notice" id="criticalNotice" role="alert">
+        <div class="critical-title">🔒 Critical Threat - No Proceed Option</div>
+        <div class="critical-text">
+          This site poses a critical security risk. Proceeding is not recommended.
+          To access this site, you must add it to your allowlist in <a href="#" class="allow-link" id="settingsLink">Settings &rarr; Custom Allowlist</a>.
+        </div>
+      </div>
+
+      <div class="proceed-section" id="proceedSection" role="region" aria-labelledby="proceedTitle">
+        <div class="proceed-title" id="proceedTitle">⚠️ Proceed with Caution</div>
+        <div class="proceed-text">
+          This site was flagged as potentially risky. Only proceed if you are certain this website is legitimate.
+        </div>
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="proceedCheckbox" aria-describedby="proceedDesc">
+          <label class="checkbox-label" for="proceedCheckbox" id="proceedDesc">
+            I understand the risks and want to proceed anyway
+          </label>
+        </div>
+        <div class="countdown" id="countdownText" aria-live="polite"></div>
+        <button class="btn btn-danger" id="proceedBtn" disabled>Proceed Anyway</button>
+      </div>
+
+      <div class="reasons" id="reasonsContainer" aria-labelledby="reasonsTitle">
+        <h2 class="reasons-title" id="reasonsTitle">Why this was blocked</h2>
+        <div id="signalsContainer"></div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap;">
+        <div class="detail-row" style="flex: 1; min-width: 150px; flex-direction: column; gap: 4px;">
+          <span class="detail-label">Risk Level</span>
+          <span class="detail-value" id="riskLevelDisplay">--</span>
+        </div>
+        <div class="detail-row" style="flex: 1; min-width: 150px; flex-direction: column; gap: 4px;">
+          <span class="detail-label">Risk Score</span>
+          <span class="detail-value" id="riskScore">--/100</span>
+        </div>
+        <div class="detail-row" style="flex: 1; min-width: 150px; flex-direction: column; gap: 4px;">
+          <span class="detail-label">Blocked At</span>
+          <span class="detail-value" id="blockTime"></span>
+        </div>
+        <div class="detail-row" style="flex: 1; min-width: 150px; flex-direction: column; gap: 4px;">
+          <span class="detail-label">Case ID</span>
+          <span class="detail-value" id="caseId" style="font-family: monospace; font-size: 11px;">--</span>
+        </div>
+      </div>
+
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary" id="goBack" autofocus>
+          <span aria-hidden="true">←</span> Go Back to Safety
+        </button>
+        <button class="btn btn-secondary" id="newTab">
+          <span aria-hidden="true">+</span> New Tab
+        </button>
+        <button class="btn btn-outline" id="reportSite">
+          <span aria-hidden="true">🚩</span> Report Mistake
+        </button>
+      </div>
+    </div>
+
+    <footer class="footer">
+      Protected by Guardian &middot; <a href="#" id="falsePositiveLink">Report False Positive</a> &middot; <a href="#" id="settingsLinkFooter">Settings</a>
+    </footer>
+  </div>
+
+  <div id="root"></div>
+  <script type="module" src="./index.tsx"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "logistic_regression": {
+    "roc_auc": NaN,
+    "pr_auc": 0.0,
+    "f1": 0.0,
+    "fpr_at_95_tpr": 1.0,
+    "fpr_at_99_tpr": 1.0,
+    "fpr_at_999_tpr": 1.0,
+    "tpr_at_1pct_fpr": NaN,
+    "tpr_at_01pct_fpr": NaN,
+    "ece": 0.012320496746921834,
+    "brier_score": 0.004420488881967115
+  },
+  "lightgbm": {
+    "roc_auc": NaN,
+    "pr_auc": 0.0,
+    "f1": 0.0,
+    "fpr_at_95_tpr": 1.0,
+    "fpr_at_99_tpr": 1.0,
+    "fpr_at_999_tpr": 1.0,
+    "tpr_at_1pct_fpr": NaN,
+    "tpr_at_01pct_fpr": NaN,
+    "ece": 0.010362045085540391,
+    "brier_score": 0.0037055207640331114
+  }
+}

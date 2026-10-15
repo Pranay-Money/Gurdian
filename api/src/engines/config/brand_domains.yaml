@@ -1,0 +1,345 @@
+# Brand to Official Domains Mapping
+# Used by impersonation_engine for brand impersonation detection
+# Format: brand_name: [list of official domains]
+
+brands:
+  # Global Tech & Finance
+  google:
+    - google.com
+    - googlemail.com
+    - gmail.com
+    - youtube.com
+    - youtube-nocookie.com
+    - blogger.com
+    - googleusercontent.com
+    - googlevideo.com
+    - gstatic.com
+    - googleapis.com
+    - googleadservices.com
+    - googlesyndication.com
+    - doubleclick.net
+    - googleusercontent.com
+  microsoft:
+    - microsoft.com
+    - live.com
+    - outlook.com
+    - hotmail.com
+    - msn.com
+    - office.com
+    - office365.com
+    - onedrive.com
+    - sharepoint.com
+    - azure.com
+    - github.com
+    - github.io
+    - visualstudio.com
+    - nuget.org
+    - microsoftonline.com
+  apple:
+    - apple.com
+    - icloud.com
+    - me.com
+    - mac.com
+    - itunes.com
+    - appstore.com
+    - appleid.apple.com
+    - developer.apple.com
+  amazon:
+    - amazon.com
+    - amazon.in
+    - amazon.co.uk
+    - amazon.de
+    - amazon.ca
+    - amazon.fr
+    - amazon.co.jp
+    - amazonaws.com
+    - aws.amazon.com
+    - audible.com
+    - twitch.tv
+    - goodreads.com
+  facebook:
+    - facebook.com
+    - fb.com
+    - instagram.com
+    - messenger.com
+    - whatsapp.com
+    - whatsapp.net
+    - fbcdn.net
+    - instagramcdn.com
+    - facebookmail.com
+    - meta.com
+  paypal:
+    - paypal.com
+    - paypalobjects.com
+    - paypal-communication.com
+    - paypal.me
+    - venmo.com
+    - braintreepayments.com
+  netflix:
+    - netflix.com
+    - nflxext.com
+    - nflximg.net
+    - netflix.net
+  twitter:
+    - twitter.com
+    - t.co
+    - x.com
+    - twitter.com
+  linkedin:
+    - linkedin.com
+    - linkedin.cn
+    - linkedin.io
+  github:
+    - github.com
+    - github.io
+    - githubusercontent.com
+    - githubassets.com
+  adobe:
+    - adobe.com
+    - adobe.io
+    - adobedc.net
+    - creativecloud.com
+  salesforce:
+    - salesforce.com
+    - force.com
+    - salesforceliveagent.com
+  dropbox:
+    - dropbox.com
+    - dropboxusercontent.com
+    - dropboxapi.com
+  slack:
+    - slack.com
+    - slack-edge.com
+    - slack-imgs.com
+  zoom:
+    - zoom.us
+    - zoom.com
+    - zoomgov.com
+  stripe:
+    - stripe.com
+    - js.stripe.com
+    - m.stripe.com
+  shopify:
+    - shopify.com
+    - myshopify.com
+    - shopifycdn.com
+  wordpress:
+    - wordpress.com
+    - wp.com
+    - wordpress.org
+    - w.org
+  lottery:
+    - national-lottery.gov.uk
+    - national-lottery.co.uk
+    - lottery.ie
+
+  # Indian Brands
+  hdfc:
+    - hdfcbank.com
+    - hdfcsec.com
+    - hdfclife.com
+    - hdfcergo.com
+    - hdfcbank.net.in
+  icici:
+    - icicibank.com
+    - iciciprulife.com
+    - icicilombard.com
+    - icicisecurities.com
+    - icicidirect.com
+  sbi:
+    - sbi.co.in
+    - onlinesbi.com
+    - sbicard.com
+    - sbilife.co.in
+    - sbimf.com
+  axis:
+    - axisbank.com
+    - axisbank.co.in
+    - axisdirect.in
+    - axismf.com
+  kotak:
+    - kotak.com
+    - kotakbank.com
+    - kotaklife.com
+    - kotakmf.com
+  paytm:
+    - paytm.com
+    - paytm.in
+    - paytmpaymentsbank.com
+    - paytmmoney.com
+  phonepe:
+    - phonepe.com
+    - phonepe.in
+  googlepay:
+    - gpay.google.com
+    - google.com/pay
+  razorpay:
+    - razorpay.com
+    - rzp.io
+  flipkart:
+    - flipkart.com
+    - flipkart.in
+    - myntra.com
+    - phonepe.com
+  amazon_in:
+    - amazon.in
+    - amazonindia.com
+  snapdeal:
+    - snapdeal.com
+  zomato:
+    - zomato.com
+    - zomato.in
+    - zomato.ae
+  swiggy:
+    - swiggy.com
+    - swiggy.in
+  ola:
+    - ola.com
+    - olacabs.com
+    - olaelectric.com
+  uber:
+    - uber.com
+    - uber.in
+  airtel:
+    - airtel.in
+    - airtel.com
+    - airtelpaymentsbank.com
+    - airtelmoney.in
+  jio:
+    - jio.com
+    - jiomart.com
+    - jiocinema.com
+    - jiosaavn.com
+    - jiohealthhub.com
+  vi:
+    - myvi.in
+    - vodafone.in
+    - vi.in
+  bsnl:
+    - bsnl.in
+    - bsnl.co.in
+  lic:
+    - licindia.in
+    - licindia.com
+  sbi_card:
+    - sbicard.com
+  hdfc_life:
+    - hdfclife.com
+  icici_lombard:
+    - icicilombard.com
+  bajaj:
+    - bajajfinserv.in
+    - bajajfinance.com
+    - bajajallianz.com
+    - bajajauto.com
+  tata:
+    - tatamotors.com
+    - tatasteel.com
+    - tatapower.com
+    - tcs.com
+    - tata.com
+    - tajhotels.com
+    - tanishq.co.in
+    - tataaig.com
+    - tatacliq.com
+  reliance:
+    - reliance.com
+    - relianceindustries.com
+    - jio.com
+    - relianceretail.com
+    - reliancedigital.in
+  infosys:
+    - infosys.com
+    - infosys.in
+  tcs:
+    - tcs.com
+    - tcs.in
+  wipro:
+    - wipro.com
+    - wipro.in
+  hcl:
+    - hcltech.com
+    - hcl.com
+  tech_mahindra:
+    - techmahindra.com
+    - techmahindra.in
+  lnt:
+    - larsentoubro.com
+    - lnt.com
+    - lntinfotech.com
+  hdfc_ergo:
+    - hdfcergo.com
+  icici_pru:
+    - iciciprulife.com
+  sbi_life:
+    - sbilife.co.in
+  bajaj_allianz:
+    - bajajallianz.com
+  max_life:
+    - maxlifeinsurance.com
+  hdfc_mf:
+    - hdfcfund.com
+  icici_mf:
+    - icicipruamc.com
+  sbi_mf:
+    - sbimf.com
+  nippon_mf:
+    - nipponindiamf.com
+  aditya_birla:
+    - adityabirlacapital.com
+    - adityabirlafashion.com
+    - grasim.com
+    - hindalco.com
+    - ultratechcement.com
+
+# Free email providers that should NOT claim to be organizations
+free_email_providers:
+  - gmail.com
+  - googlemail.com
+  - yahoo.com
+  - ymail.com
+  - rocketmail.com
+  - outlook.com
+  - hotmail.com
+  - live.com
+  - msn.com
+  - icloud.com
+  - me.com
+  - mac.com
+  - aol.com
+  - aim.com
+  - protonmail.com
+  - proton.me
+  - tutanota.com
+  - tutanota.de
+  - zoho.com
+  - zohomail.com
+  - yandex.com
+  - yandex.ru
+  - mail.ru
+  - inbox.ru
+  - list.ru
+  - bk.ru
+  - gmx.com
+  - gmx.net
+  - gmx.de
+  - web.de
+  - freenet.de
+  - posteo.de
+  - mailbox.org
+  - fastmail.com
+  - fastmail.fm
+  - hey.com
+  - outlook.in
+  - live.in
+  - hotmail.in
+  - yahoo.in
+  - ymail.in
+  - rediffmail.com
+  - indiatimes.com
+  - sancharnet.in
+  - vsnl.net
+  - mtnl.net.in
+  - bsnl.in
+  - airtelmail.in
+  - jio.com

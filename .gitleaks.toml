@@ -1,0 +1,115 @@
+title = "Gitleaks Configuration for Guardian"
+
+[allowlist]
+description = "Allowlisted patterns"
+paths = [
+  "*.md",
+  "*.txt",
+  "*.json",
+  "*.yaml",
+  "*.yml",
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "*.log",
+  "dist/**",
+  "node_modules/**",
+  "__pycache__/**",
+  ".pytest_cache/**",
+  "*.pkl",
+  "*.joblib",
+  "ml/data/**",
+  "api/ml/**",
+]
+commits = []
+stopwords = [
+  "test",
+  "example",
+  "sample",
+  "dummy",
+  "mock",
+  "fake",
+  "placeholder",
+  "dev-secret",
+  "test-secret",
+  "change-in-production",
+]
+
+[[rules]]
+id = "github-pat"
+description = "GitHub Personal Access Token"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+
+[[rules]]
+id = "github-oauth"
+description = "GitHub OAuth Token"
+regex = '''gho_[0-9a-zA-Z]{36}'''
+
+[[rules]]
+id = "github-app-token"
+description = "GitHub App Token"
+regex = '''ghs_[0-9a-zA-Z]{36}'''
+
+[[rules]]
+id = "github-refresh-token"
+description = "GitHub Refresh Token"
+regex = '''ghr_[0-9a-zA-Z]{36}'''
+
+[[rules]]
+id = "slack-token"
+description = "Slack Token"
+regex = '''xox[baprs]-[0-9a-zA-Z]{10,48}'''
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Access Key"
+regex = '''[0-9a-zA-Z/+]{40}'''
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey|secret[_-]?key|access[_-]?token)['"\s:=]+[0-9a-zA-Z_\-]{20,}'''
+
+[[rules]]
+id = "jwt-token"
+description = "JWT Token"
+regex = '''eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'''
+
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'''
+
+[[rules]]
+id = "database-url"
+description = "Database Connection String"
+regex = '''(?i)(postgres|mysql|mongodb|redis)://[^:\s]+:[^@\s]+@[^/\s]+/\w+'''
+
+[[rules]]
+id = "google-safe-browsing-key"
+description = "Google Safe Browsing API Key"
+regex = '''AIza[0-9A-Za-z\-_]{35}'''
+
+[[rules]]
+id = "virustotal-key"
+description = "VirusTotal API Key"
+regex = '''[a-f0-9]{64}'''
+
+[[rules]]
+id = "phishtank-key"
+description = "PhishTank API Key"
+regex = '''(?i)phishtank[_-]?key['"\s:=]+[0-9a-zA-Z]{32,}'''
+
+[[rules]]
+id = "secret-key-env"
+description = "SECRET_KEY environment variable"
+regex = '''(?i)secret[_-]?key['"\s:=]+[0-9a-zA-Z_\-]{32,}'''
+
+[[rules]]
+id = "database-password"
+description = "Database Password in URL"
+regex = '''://[^:]+:([^@]{8,})@'''

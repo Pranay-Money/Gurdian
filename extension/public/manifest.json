@@ -1,0 +1,77 @@
+{
+  "manifest_version": 3,
+  "name": "Guardian",
+  "version": "0.1.0",
+  "description": "Phishing, scam, and malicious URL detection with real-time protection",
+  "default_locale": "en",
+  "permissions": [
+    "storage",
+    "webNavigation",
+    "declarativeNetRequest",
+    "alarms",
+    "tabs",
+    "notifications",
+    "contextMenus"
+  ],
+  "optional_permissions": [],
+  "host_permissions": [
+    "http://localhost:8000/*"
+  ],
+  "optional_host_permissions": [
+    "*://mail.google.com/*",
+    "*://outlook.live.com/*",
+    "*://*.office.com/*",
+    "*://*.office365.com/*",
+    "*://mail.yahoo.com/*",
+    "*://*.proton.me/*",
+    "*://*.protonmail.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Guardian - Protection Active",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "blocked.html",
+        "blocked.js",
+        "analyze-popup.html",
+        "analyze-popup.js"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "blocklist_ruleset",
+        "enabled": true,
+        "path": "rules/rules.json"
+      }
+    ]
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "minimum_chrome_version": "109"
+}

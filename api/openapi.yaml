@@ -1,0 +1,644 @@
+openapi: 3.0.3
+info:
+  title: Guardian API
+  version: 1.0.0
+  description: |
+    Guardian - Phishing, scam, and malicious URL detection API.
+    Analyzes message text and URLs across multiple channels (email, SMS, social, direct URLs).
+servers:
+  - url: http://localhost:8000/v1
+    description: Development server
+  - url: https://api.guardian.example.com/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    DeviceToken:
+      type: apiKey
+      in: header
+      name: X-Device-Token
+      description: Anonymous device token for client identification
+
+  schemas:
+    AnalyzeRequest:
+      type: object
+      required:
+        - channel
+      properties:
+        channel:
+          type: string
+          enum: [email, sms, social, url]
+          description: Source channel of the content being analyzed
+        sender:
+          type: string
+          description: Sender address (email, phone, social handle)
+          maxLength: 256
+        text:
+          type: string
+          description: Message text content to analyze
+          maxLength: 50000
+        urls:
+          type: array
+          items:
+            type: string
+            format: uri
+            maxLength: 2048
+          description: URLs extracted from message or provided directly
+          maxItems: 50
+        options:
+          type: object
+          properties:
+            deep:
+              type: boolean
+              default: false
+              description: Enable deep analysis (ML model + external intel)
+          additionalProperties: false
+
+    AnalyzeResponse:
+      type: object
+      required:
+        - case_id
+        - score
+        - level
+        - action
+        - signals
+        - urls
+        - model_version
+        - latency_ms
+      properties:
+        case_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this analysis case
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Risk score from 0 (safe) to 100 (critical)
+        level:
+          type: string
+          enum: [Low, Medium, High, Critical]
+          description: Risk classification level
+        action:
+          type: string
+          enum: [allow, warn, block]
+          description: Recommended client action
+        signals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Signal'
+          description: Individual detection signals with evidence
+        urls:
+          type: array
+          items:
+            $ref: '#/components/schemas/URLAnalysis'
+          description: Analysis results for each URL
+        model_version:
+          type: string
+          description: Version of the ML model used
+        latency_ms:
+          type: integer
+          description: Total analysis latency in milliseconds
+
+    Signal:
+      type: object
+      required:
+        - key
+        - category
+        - label
+        - points
+        - reason
+        - evidence
+      properties:
+        key:
+          type: string
+          description: Unique signal identifier (e.g., 'typosquat', 'urgency_keywords')
+        category:
+          type: string
+          enum: [linguistic, structural, reputation, behavioral, metadata, impersonation, sensitive_request]
+          description: Signal category
+        label:
+          type: string
+          description: Human-readable signal name
+        points:
+          type: integer
+          description: Points contributed to risk score (can be negative)
+        reason:
+          type: string
+          description: Why this signal fired
+        evidence:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              value:
+                type: string
+              description:
+                type: string
+            required: [type, value, description]
+
+    URLAnalysis:
+      type: object
+      required:
+        - url
+        - host
+        - registrable_domain
+        - tld
+        - https
+        - subdomains
+        - length
+      properties:
+        url:
+          type: string
+          format: uri
+        host:
+          type: string
+        registrable_domain:
+          type: string
+        tld:
+          type: string
+        https:
+          type: boolean
+        subdomains:
+          type: array
+          items:
+            type: string
+        length:
+          type: integer
+        age_days:
+          type: integer
+          description: Domain age in days (if available)
+        redirects:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Redirect chain URLs
+        intel:
+          type: object
+          properties:
+            source:
+              type: string
+              enum: [google_safe_browsing, virustotal, abuseipdb, urlhaus, phishtank]
+            verdict:
+              type: string
+              enum: [clean, malicious, suspicious, unknown]
+            details:
+              type: object
+            checked_at:
+              type: string
+              format: date-time
+          required: [source, verdict]
+
+    CaseListResponse:
+      type: object
+      required:
+        - cases
+        - next_cursor
+      properties:
+        cases:
+          type: array
+          items:
+            $ref: '#/components/schemas/CaseSummary'
+        next_cursor:
+          type: string
+          nullable: true
+
+    CaseSummary:
+      type: object
+      required:
+        - case_id
+        - score
+        - level
+        - action
+        - channel
+        - created_at
+      properties:
+        case_id:
+          type: string
+          format: uuid
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        level:
+          type: string
+          enum: [Low, Medium, High, Critical]
+        action:
+          type: string
+          enum: [allow, warn, block]
+        channel:
+          type: string
+          enum: [email, sms, social, url]
+        created_at:
+          type: string
+          format: date-time
+        sender:
+          type: string
+          nullable: true
+        url_count:
+          type: integer
+
+    CaseDetail:
+      allOf:
+        - $ref: '#/components/schemas/AnalyzeResponse'
+        - type: object
+          properties:
+            sender:
+              type: string
+              nullable: true
+            text:
+              type: string
+              nullable: true
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+
+    FeedbackRequest:
+      type: object
+      required:
+        - case_id
+        - verdict
+      properties:
+        case_id:
+          type: string
+          format: uuid
+        verdict:
+          type: string
+          enum: [false_positive, false_negative, correct]
+        notes:
+          type: string
+          maxLength: 1000
+
+    ReportRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+        note:
+          type: string
+          maxLength: 2000
+
+    StatsResponse:
+      type: object
+      required:
+        - total_cases
+        - by_level
+        - by_channel
+        - avg_score
+        - avg_latency_ms
+      properties:
+        total_cases:
+          type: integer
+        by_level:
+          type: object
+          additionalProperties:
+            type: integer
+        by_channel:
+          type: object
+          additionalProperties:
+            type: integer
+        avg_score:
+          type: number
+        avg_latency_ms:
+          type: number
+
+    BlocklistDeltaResponse:
+      type: object
+      required:
+        - additions
+        - removals
+        - timestamp
+      properties:
+        additions:
+          type: array
+          items:
+            type: object
+            required: [domain, reason, expires_at]
+            properties:
+              domain:
+                type: string
+              reason:
+                type: string
+                enum: [phishing, malware, scam, impersonation]
+              expires_at:
+                type: string
+                format: date-time
+        removals:
+          type: array
+          items:
+            type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    DeviceRegisterResponse:
+      type: object
+      required:
+        - device_token
+        - expires_at
+      properties:
+        device_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+
+security:
+  - DeviceToken: []
+
+paths:
+  /analyze:
+    post:
+      summary: Analyze message text and URLs for threats
+      operationId: analyze
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeRequest'
+      responses:
+        '200':
+          description: Analysis complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing device token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /cases:
+    get:
+      summary: List analysis cases with filtering and pagination
+      operationId: listCases
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query (sender, URL, text)
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [Low, Medium, High, Critical]
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [email, sms, social, url]
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Pagination cursor
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of cases
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseListResponse'
+        '401':
+          description: Invalid or missing device token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /cases/{case_id}:
+    get:
+      summary: Get detailed analysis case
+      operationId: getCase
+      parameters:
+        - name: case_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Case details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseDetail'
+        '404':
+          description: Case not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing device token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /feedback:
+    post:
+      summary: Submit feedback on analysis result
+      operationId: submitFeedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+      responses:
+        '200':
+          description: Feedback recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    default: true
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing device token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /report:
+    post:
+      summary: Report a malicious URL
+      operationId: reportUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        '200':
+          description: Report accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    default: true
+                  report_id:
+                    type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing device token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stats:
+    get:
+      summary: Get aggregated statistics
+      operationId: getStats
+      parameters:
+        - name: range
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 30d
+      responses:
+        '200':
+          description: Statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '401':
+          description: Invalid or missing device token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /blocklist/delta:
+    get:
+      summary: Get blocklist changes since timestamp (for extension cache sync)
+      operationId: getBlocklistDelta
+      parameters:
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+            default: '1970-01-01T00:00:00Z'
+          description: Return changes after this timestamp; timestamps without an offset are interpreted as UTC.
+      responses:
+        '200':
+          description: Blocklist delta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlocklistDeltaResponse'
+        '400':
+          description: Invalid timestamp
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /devices:
+    post:
+      summary: Register anonymous device and get token
+      operationId: registerDevice
+      responses:
+        '200':
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceRegisterResponse'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

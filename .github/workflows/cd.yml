@@ -1,0 +1,233 @@
+# CD Pipeline - Deploys to staging on tag, promotes to production on manual approval
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  # ===========================
+  # Deploy to Staging
+  # ===========================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: ${{ github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'refs/tags/') }}
+    environment: staging
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install flyctl
+        uses: superfly/flyctl-actions@1.5
+        with:
+          version: "latest"
+
+      - name: Deploy to Fly.io Staging
+        run: |
+          flyctl deploy --config fly.staging.toml --app guardian-api-staging \
+            --dockerfile api/Dockerfile.prod \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VCS_REF=${{ github.sha }} \
+            --build-arg VERSION=${{ github.event.workflow_run.head_sha }}
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Run Staging Smoke Tests
+        run: |
+          # Wait for deployment to be ready
+          sleep 30
+          
+          # Run smoke tests against staging
+          STAGING_URL="https://guardian-api-staging.fly.dev"
+          
+          # Health check
+          curl -f "$STAGING_URL/health" || exit 1
+          
+          # Test device registration
+          TOKEN=$(curl -s -X POST "$STAGING_URL/v1/devices" | jq -r .device_token)
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "Failed to register device"
+            exit 1
+          fi
+          
+          # Test analyze endpoint
+          RESPONSE=$(curl -s -X POST "$STAGING_URL/v1/analyze" \
+            -H "Content-Type: application/json" \
+            -H "X-Device-Token: $TOKEN" \
+            -d '{"channel": "email", "sender": "test@example.com", "text": "Test message", "urls": ["https://example.com"]}')
+          
+          SCORE=$(echo "$RESPONSE" | jq -r .score)
+          if [ -z "$SCORE" ] || [ "$SCORE" = "null" ]; then
+            echo "Analyze endpoint failed"
+            exit 1
+          fi
+          
+          echo "Staging smoke tests passed!"
+
+      - name: Notify on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.25
+        with:
+          payload: |
+            {
+              "text": "Staging deployment failed for ${{ github.repository }}@${{ github.sha }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Staging Deployment Failed* :x:\nRepository: ${{ github.repository }}\nCommit: ${{ github.sha }}\nWorkflow: ${{ github.workflow }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # ===========================
+  # Promote to Production (Manual Approval)
+  # ===========================
+  promote-production:
+    name: Promote to Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    # Requires manual approval in GitHub Environments
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install flyctl
+        uses: superfly/flyctl-actions@1.5
+        with:
+          version: "latest"
+
+      - name: Deploy to Fly.io Production
+        run: |
+          flyctl deploy --config fly.toml --app guardian-api \
+            --dockerfile api/Dockerfile.prod \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VCS_REF=${{ github.sha }} \
+            --build-arg VERSION=${{ github.event.workflow_run.head_sha }}
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Run Production Smoke Tests
+        run: |
+          # Wait for deployment
+          sleep 30
+          
+          PROD_URL="https://guardian-api.fly.dev"
+          
+          # Health check
+          curl -f "$PROD_URL/health" || exit 1
+          
+          # Test device registration
+          TOKEN=$(curl -s -X POST "$PROD_URL/v1/devices" | jq -r .device_token)
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "Failed to register device"
+            exit 1
+          fi
+          
+          # Test analyze endpoint
+          RESPONSE=$(curl -s -X POST "$PROD_URL/v1/analyze" \
+            -H "Content-Type: application/json" \
+            -H "X-Device-Token: $TOKEN" \
+            -d '{"channel": "email", "sender": "test@example.com", "text": "Test message", "urls": ["https://example.com"]}')
+          
+          SCORE=$(echo "$RESPONSE" | jq -r .score)
+          if [ -z "$SCORE" ] || [ "$SCORE" = "null" ]; then
+            echo "Analyze endpoint failed"
+            exit 1
+          fi
+          
+          echo "Production smoke tests passed!"
+
+      - name: Update Extension API URL (if needed)
+        run: |
+          # This step would update the extension's API endpoint if we're deploying
+          # a new production API URL. For now, it's a placeholder.
+          echo "Production deployment complete. Extension points to production API."
+
+      - name: Notify on Success
+        uses: slackapi/slack-github-action@v1.25
+        with:
+          payload: |
+            {
+              "text": "Production deployment succeeded for ${{ github.repository }}@${{ github.sha }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Successful* :white_check_mark:\nRepository: ${{ github.repository }}\nCommit: ${{ github.sha }}\nTag: ${{ github.event.workflow_run.head_branch }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.25
+        with:
+          payload: |
+            {
+              "text": "Production deployment failed for ${{ github.repository }}@${{ github.sha }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Failed* :x:\nRepository: ${{ github.repository }}\nCommit: ${{ github.sha }}\nWorkflow: ${{ github.workflow }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # ===========================
+  # Rollback Production (Manual)
+  # ===========================
+  rollback-production:
+    name: Rollback Production
+    if: false  # Only run manually via workflow_dispatch
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Install flyctl
+        uses: superfly/flyctl-actions@1.5
+
+      - name: Rollback to previous release
+        run: |
+          flyctl releases --app guardian-api --limit 2
+          PREVIOUS=$(flyctl releases --app guardian-api --limit 2 --json | jq -r '.[1].version')
+          flyctl releases rollback $PREVIOUS --app guardian-api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Verify Rollback
+        run: |
+          sleep 30
+          curl -f "https://guardian-api.fly.dev/health" || exit 1
+          echo "Rollback verified!"
